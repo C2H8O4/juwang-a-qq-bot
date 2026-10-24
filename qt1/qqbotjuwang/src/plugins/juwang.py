@@ -7,7 +7,14 @@ import httpx
 from nonebot import on_message
 from nonebot.adapters.onebot.v11 import Bot, Message, MessageEvent, MessageSegment
 from nonebot.rule import to_me
-#version:0.2.15
+#这里是一些小游戏要的库
+import random
+from nonebot import on_command
+#version:0.4.27
+#这里写开发者和管理员权限..............
+Boot_ID = 3669772451 #最高权限
+Admin_ID = 3482687304,2056117867 #管理员权限
+User_ID = 0 #内测用户ID
 #疑似这里写配置?/
 OLLAMA_URL = "http://127.0.0.1:11434/api/chat" #OLLAMA的地址喵
 MODEL_NAME = "juwang:latest"#这是名字橘望
@@ -29,14 +36,13 @@ cu.execute("""
 cx.commit()
 cx.close()
 #NONEBot部分, 然后导入httpx进ollama>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<
-messagen = on_message(rule=to_me())
+messagen = on_message(rule=to_me(),priority=10,block=False)
 @messagen.handle()
 async def handle(event):
   async with httpx.AsyncClient(timeout=300) as client:
     user_msg = event.get_plaintext().strip()
     if not user_msg:
-      await messagen.finish("你想说什么喵～")
-
+      await messagen.finish("你可以@我加上你想说的话,这样就可以聊天了喵；或者@我并加上/猜数字,就可以玩猜数字游戏了喵")
 
     payload = {
     "model": MODEL_NAME,
@@ -60,3 +66,29 @@ async def handle(event):
   cx.close()
 
   await messagen.finish(httpx2)
+
+#这里是小游戏层
+#数字游戏1.0喵
+#modelver:1.0
+game_DATA = {}
+game_numberBoom = on_command("猜数字",rule=to_me(),priority=1,block=True)
+
+@game_numberBoom.handle()
+async def handle_guess(event:MessageEvent):
+  game_DATA[event.group_id] = random.randint(1,100)
+  await game_numberBoom.send("开始猜数字游戏吧,从1-100里面猜数字,谁猜中了就可以向任意一个群友提条件喵")
+  print(event.group_id,game_DATA[event.group_id],flush=True)
+@game_numberBoom.got("guess")
+async def cheakgroup_guess(event:MessageEvent):
+  ccc = game_DATA[event.group_id]
+  bbb = str(event.message).strip()
+
+  if bbb.isdigit():
+    aaa = int(bbb)
+    if aaa>ccc:
+      await game_numberBoom.send("猜大了喵,尝试猜小一点喵")
+    elif aaa<ccc:
+      await game_numberBoom.send("猜小了喵,尝试猜大一点喵")
+    else:
+      await game_numberBoom.finish(f"猜对了喵,答案就是{game_DATA[ccc]} 喵")
+#写完ver 0.4.27的主要部分了
